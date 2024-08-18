@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Image to QR Code Generator</title>
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #333;
+            margin: 0;
+            font-family: Arial, sans-serif;
+        }
+
+        .container {
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            text-align: center;
+        }
+
+        h1 {
+            font-size: 32px;
+            color: #333;
+            margin-bottom: 20px;
+        }
+
+        input[type="file"] {
+            margin-bottom: 20px;
+        }
+
+        .qr-size {
+            margin-bottom: 20px;
+        }
+
+        .button-group {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        button {
+            background-color: #000;
+            color: #fff;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        .download-btn {
+            background-color: #000;
+            color: #fff;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: transform 0.2s;
+        }
+
+        .download-btn:hover {
+            transform: scale(1.1);
+        }
+
+        #qrCodeCanvas {
+            margin-top: 20px;
+        }
+
+        .hidden {
+            display: none;
+        }
+    </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js"></script>
+</head>
+
+<body>
+    <div class="container">
+        <h1>Image to QR Code</h1>
+        <input type="file" id="imageInput">
+        <div class="qr-size">
+            <label for="qrSize">Select QR Code Size: </label>
+            <select id="qrSize">
+                <option value="150" selected>Small</option>
+                <option value="250">Medium</option>
+                <option value="350">Large</option>
+            </select>
+        </div>
+        <div class="button-group">
+            <button onclick="uploadAndGenerateQR()">Generate QR Code</button>
+        </div>
+        <canvas id="qrCodeCanvas"></canvas>
+        <div class="button-group">
+            <button class="download-btn hidden" id="downloadBtn" onclick="downloadQRCode()">Download QR Code</button>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
+        import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-storage.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyCXM83imLZGSAYZfFXv_rIvKO9FPW1RbbI",
+            authDomain: "qr-code-generator-7878e.firebaseapp.com",
+            projectId: "qr-code-generator-7878e",
+            storageBucket: "qr-code-generator-7878e.appspot.com",
+            messagingSenderId: "596540475438",
+            appId: "1:596540475438:web:0e73fb973479dd787ff7bf"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const storage = getStorage(app);
+
+        window.uploadAndGenerateQR = async function () {
+            const file = document.getElementById('imageInput').files[0];
+            const qrSize = document.getElementById('qrSize').value;
+
+            if (!file) {
+                alert("Please select an image file first.");
+                return;
+            }
+
+            const storageRef = ref(storage, `images/${file.name}`);
+            await uploadBytes(storageRef, file);
+            const url = await getDownloadURL(storageRef);
+
+            const qr = new QRious({
+                element: document.getElementById('qrCodeCanvas'),
+                value: url,
+                size: parseInt(qrSize)
+            });
+
+            // Show download button after QR code is generated
+            document.getElementById('downloadBtn').classList.remove('hidden');
+        };
+
+        window.downloadQRCode = function () {
+            const canvas = document.getElementById('qrCodeCanvas');
+            const link = document.createElement('a');
+            link.download = 'qrcode.png';
+            link.href = canvas.toDataURL();
+            link.click();
+        };
+
+        // Hide download button initially
+        document.getElementById('downloadBtn').classList.add('hidden');
+    </script>
+</body>
+
+</html>
