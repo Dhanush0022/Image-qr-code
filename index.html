@@ -11,9 +11,11 @@
             justify-content: center;
             align-items: center;
             height: 100vh;
-            background-color: #333;
             margin: 0;
             font-family: Arial, sans-serif;
+            background: linear-gradient(45deg, #f06, #ff9a9e, #f6f, #ff9a9e);
+            background-size: 600% 600%;
+            animation: gradient 15s ease infinite;
         }
 
         .container {
@@ -77,6 +79,47 @@
         .hidden {
             display: none;
         }
+
+        /* Bouncing dot animation */
+        @keyframes bounce {
+            0%, 20%, 50%, 80%, 100% {
+                transform: translateY(0);
+            }
+            40% {
+                transform: translateY(-30px);
+            }
+            60% {
+                transform: translateY(-15px);
+            }
+        }
+
+        .loading {
+            display: none;
+            margin-top: 40px; /* Increased space between the button and loading animation */
+        }
+
+        .loading .dot-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .loading .dot {
+            background-color: #000;
+            border-radius: 50%;
+            width: 15px;
+            height: 15px;
+            margin: 0 5px;
+            animation: bounce 1.5s infinite;
+        }
+
+        .loading .dot:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+
+        .loading .dot:nth-child(3) {
+            animation-delay: 0.4s;
+        }
     </style>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js"></script>
 </head>
@@ -95,6 +138,13 @@
         </div>
         <div class="button-group">
             <button onclick="uploadAndGenerateQR()">Generate QR Code</button>
+        </div>
+        <div class="loading" id="loading">
+            <div class="dot-container">
+                <div class="dot"></div>
+                <div class="dot"></div>
+                <div class="dot"></div>
+            </div>
         </div>
         <canvas id="qrCodeCanvas"></canvas>
         <div class="button-group">
@@ -121,24 +171,36 @@
         window.uploadAndGenerateQR = async function () {
             const file = document.getElementById('imageInput').files[0];
             const qrSize = document.getElementById('qrSize').value;
+            const loadingElement = document.getElementById('loading');
 
             if (!file) {
                 alert("Please select an image file first.");
                 return;
             }
 
-            const storageRef = ref(storage, `images/${file.name}`);
-            await uploadBytes(storageRef, file);
-            const url = await getDownloadURL(storageRef);
+            // Show loading animation
+            loadingElement.style.display = 'block';
 
-            const qr = new QRious({
-                element: document.getElementById('qrCodeCanvas'),
-                value: url,
-                size: parseInt(qrSize)
-            });
+            try {
+                const storageRef = ref(storage, `images/${file.name}`);
+                await uploadBytes(storageRef, file);
+                const url = await getDownloadURL(storageRef);
 
-            // Show download button after QR code is generated
-            document.getElementById('downloadBtn').classList.remove('hidden');
+                const qr = new QRious({
+                    element: document.getElementById('qrCodeCanvas'),
+                    value: url,
+                    size: parseInt(qrSize)
+                });
+
+                // Show download button after QR code is generated
+                document.getElementById('downloadBtn').classList.remove('hidden');
+            } catch (error) {
+                console.error("Error generating QR code:", error);
+                alert("An error occurred while generating the QR code. Please try again.");
+            } finally {
+                // Hide loading animation
+                loadingElement.style.display = 'none';
+            }
         };
 
         window.downloadQRCode = function () {
